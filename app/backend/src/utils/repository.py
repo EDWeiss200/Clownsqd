@@ -11,6 +11,10 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def add_one_not_return():
+        raise NotImplementedError
+
+    @abstractmethod
     async def find_all():
         raise NotImplementedError
 
@@ -25,6 +29,10 @@ class AbstractRepository(ABC):
 
     @abstractmethod
     async def find_filter():
+        raise NotImplementedError
+
+    @abstractmethod
+    async def relationship_base_find():
         raise NotImplementedError
 
 
@@ -48,6 +56,16 @@ class SQLAlchemyRepository(AbstractRepository):
             res = await session.execute(stmt)
             await session.commit()
             return res.scalar_one()
+
+    async def add_one_not_return(self, data : dict) -> int:
+        async with async_session_maker() as session:
+            stmt = (
+                insert(self.model).
+                values(**data)
+            )
+            await session.execute(stmt)
+            await session.commit()
+            return True
     
 
 
@@ -57,7 +75,7 @@ class SQLAlchemyRepository(AbstractRepository):
                 select(self.model)
             )
             res = await session.execute(stmt)
-            res = [row[0].to_read_model() for row in res.all()]
+            res = res.scalars().all()
             return res
 
     
@@ -94,8 +112,23 @@ class SQLAlchemyRepository(AbstractRepository):
                 select(self.model).filter(*filters)
             )
             res = await session.execute(stmt)
-            res = [row[0].to_read_model() for row in res.all()]
+            res = res.scalars().all()
             return res
+
+    async def relationship_base_find(self,relationship,column):
+        async with async_session_maker() as session:  
+            #query = await self.strategy.relationship_query(relationship,user_id)
+            #query = await RelationShipQuery.relationship_query(self.model,relationship,user_id)
+            query = (
+                select(self.model)
+                .where(self.model.id == column)
+                .options(selectinload(relationship))
+                
+            )
+            res =  await session.execute(query)
+            result_orm = res.scalars().all()
+
+            return result_orm
 
     
         

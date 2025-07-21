@@ -6,6 +6,8 @@ from auth.schemas import UserCreate,UserRead
 
 from fastapi.middleware.cors import CORSMiddleware
 from api.user_router import router as user_router
+from api.chat_router import router as chat_router
+from api.message_router import router as message_router
 
 
 
@@ -56,7 +58,8 @@ app.include_router(
 
 
 app.include_router(user_router)
-
+app.include_router(chat_router)
+app.include_router(message_router)
 
 
 
